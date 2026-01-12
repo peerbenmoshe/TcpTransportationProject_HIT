@@ -86,15 +86,18 @@ def direct_message(parts, clientSocket, senderName):
         clientSocket.sendall("[SERVER] Usage: /msg <client_name> <message>".encode("utf-8"))
         return
     
-    destinationName, message = parts[1].split(' ', 1)
+    parts = parts[1].split(' ', 1)
+    if len(parts) < 2:
+        clientSocket.sendall("[SERVER] Usage: /msg <client_name> <message>".encode("utf-8"))
+        return
+    
+    destinationName = parts[0]
+    message = parts[1]
     if destinationName in connectedClients:
-        if message.strip() == "":
-            clientSocket.sendall("[SERVER] Message cannot be empty.".encode("utf-8"))
-            return
         destinationSocket = connectedClients[destinationName]
         destinationSocket.sendall(f"[DM from {senderName}] {message}".encode("utf-8"))
     else:
-        clientSocket.sendall(f"[SERVER] Client {destinationName} is not found. Use /show to see active clients.".encode("utf-8"))
+        clientSocket.sendall(f"[SERVER] Client: {destinationName} is not found. Use /show to see active clients.".encode("utf-8"))
 
 
 def broadcast_message(parts, clientSocket, senderName):
