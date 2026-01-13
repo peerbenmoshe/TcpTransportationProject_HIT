@@ -1,16 +1,24 @@
 import socket
 import threading
+import time
+#if client and server are on the same machine, import HOST and PORT from serverApp.py (will appear in loopback interface)
 from serverApp import HOST, PORT
+
+#if running on different machines, enter HOST IP manually (from the serverApp.py output) (will appear in non-loopback interface)
+# HOST = " . . . . "
+# PORT = 12345
 
 def main():
     start_client()
 
 def start_client():
+    """start the client, connect to the server, handle user input and incoming messages"""
+
     clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        name = login(clientSocket)
-        stopEvent = threading.Event()
-        listenerThread = threading.Thread(target=listen_for_messages, args=(clientSocket, name, stopEvent), daemon=True)
+        login(clientSocket)
+        stopEvent = threading.Event() #event to signal listener thread to stop
+        listenerThread = threading.Thread(target=listen_for_messages, args=(clientSocket, stopEvent), daemon=True)
         listenerThread.start()
 
         while True:
@@ -19,12 +27,13 @@ def start_client():
                 print("[CLIENT] Exiting...")   
                 break
             clientSocket.sendall(message.encode("utf-8"))
+            time.sleep(0.1)
 
     except ConnectionRefusedError:
         print(f"[CLIENT] Could not connect to the server: {HOST}:{PORT}")
     except Exception as e:
         print(f"[CLIENT] An error occurred: {e}")
-    finally:
+    finally: #ensure socket is closed and listener thread is stopped, when exiting/error
         clientSocket.close()
         stopEvent.set()
         listenerThread.join()
@@ -32,6 +41,11 @@ def start_client():
 
 
 def login(clientSocket):
+    """handle the login process:
+    - receive prompt from server
+    - send unique client name
+    - receive welcome message"""
+
     clientSocket.connect((HOST, PORT))
     print(f"[CLIENT] Connected to the server: {HOST}:{PORT}")
     serverPrompt = clientSocket.recv(1024).decode("utf-8")
@@ -43,17 +57,18 @@ def login(clientSocket):
             break
         name = input(f"[CLIENT] {response}")
     print(f"[CLIENT] {response}")
-    return name
 
 
-def listen_for_messages(clientSocket, name, stopEvent):
+def listen_for_messages(clientSocket, stopEvent):
+    """listen for incoming messages from the server and print them"""
+
     while not stopEvent.is_set():
         try:
             message = clientSocket.recv(1024).decode("utf-8")
             if message:
-                if "[SERVER]" in message:
+                if "[SERVER]" in message: #if it's a server message, it means i sent a command, so print without input prompt
                     print(f"\n{message}\n", end="")
-                else:
+                else: #if it's a message from another client, print it and re-print the input prompt
                     print(f"\n{message}\n[CLIENT] Enter a message: ", end="")
             else:
                 break

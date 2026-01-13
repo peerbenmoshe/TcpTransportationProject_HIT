@@ -1,6 +1,7 @@
 import subprocess
 import re
 
+#relevant only for Widndows
 def get_host_ip():
     """
     Run `ipconfig` and extract the first non-loopback IPv4 address.

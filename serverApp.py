@@ -2,7 +2,10 @@ import socket
 import threading
 import helperApp
 
+#if using Windows
 HOST = helperApp.get_host_ip()
+#otherwise, find the IP from your machine manually
+#HOST = " . . . . "
 PORT = 12345
 
 def main():
@@ -11,6 +14,8 @@ def main():
     start_server()
 
 def start_server():
+    """start the server, accept connections from clients, create a thread to handle each client"""
+
     serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serverSocket.bind((HOST, PORT))
     serverSocket.listen()
@@ -25,9 +30,16 @@ def start_server():
 
 
 def handle_client(clientSocket, addr):
+    """handle the communication with a connected client:
+    - ask for client name (unique)
+    - send a welcome message
+    - accept messages/commands from the client
+    - process the messages/commands accordingly
+    - handle client disconnection"""
+
     try:
         name = ask_client_name(clientSocket)
-        connectedClients[name] = clientSocket
+        connectedClients[name] = clientSocket #store the client name:socket mapping in a global dictionary
         print(f"[SERVER] {name} : {addr} has joined the chat")
         welcomeMessage = f"Welcome to the chat, {name}!\n"
         showCommands = """\tShow active clients: /show
@@ -53,16 +65,20 @@ def handle_client(clientSocket, addr):
 
 
 def ask_client_name(clientSocket):
+    """ask the client for a unique name, return the name when accepted"""
+
     askName = "What's your name?"
     while True:
         clientSocket.sendall(askName.encode("utf-8"))
         name = clientSocket.recv(1024).decode("utf-8")
-        if name not in connectedClients.keys():
+        if name not in connectedClients.keys(): #verify that the name is unique (not in the dict)
             return name
         askName = "Name already taken. Please provide another name: "
 
 
 def process_data(data, clientSocket, senderName):
+    """process the received data, act accordingly based on the command"""
+
     parts = data.strip().split(' ', 1)
     if not parts:
         return None
@@ -82,18 +98,20 @@ def process_data(data, clientSocket, senderName):
     
 
 def direct_message(parts, clientSocket, senderName):
-    if len(parts) < 2:
+    """send a direct message to a specific client"""
+
+    if len(parts) < 2: #no arguments after /msg
         clientSocket.sendall("[SERVER] Usage: /msg <client_name> <message>".encode("utf-8"))
         return
     
     parts = parts[1].split(' ', 1)
-    if len(parts) < 2:
+    if len(parts) < 2: #missing message part
         clientSocket.sendall("[SERVER] Usage: /msg <client_name> <message>".encode("utf-8"))
         return
     
     destinationName = parts[0]
     message = parts[1]
-    if destinationName in connectedClients:
+    if destinationName in connectedClients: #check if the destination client exists
         destinationSocket = connectedClients[destinationName]
         destinationSocket.sendall(f"[DM from {senderName}] {message}".encode("utf-8"))
     else:
@@ -101,26 +119,30 @@ def direct_message(parts, clientSocket, senderName):
 
 
 def broadcast_message(parts, clientSocket, senderName):
-    if len(parts) < 2:
+    """send a message to all connected clients except the sender"""
+
+    if len(parts) < 2: #missing message part
         clientSocket.sendall("[SERVER] Usage: /all <message>".encode("utf-8"))
         return
     
     message = parts[1]
-    if message.strip() == "":
-        clientSocket.sendall("[SERVER] Message cannot be empty.".encode("utf-8"))
-        return
-    for destinationSocket in connectedClients.values():
+
+    for destinationSocket in connectedClients.values(): #send to all clients except sender
         if destinationSocket != clientSocket:
             destinationSocket.sendall(f"[Broadcast from {senderName}] {message}".encode("utf-8"))
 
 
 def show_active_clients(clientSocket):
+    """send the list of active clients to the requesting client"""
+
     activeClients = ", ".join(connectedClients.keys())
     response = f"[SERVER] Active clients: [{activeClients}]"
     clientSocket.sendall(response.encode("utf-8"))
 
 
 def show_help(clientSocket):
+    """send the list of available commands to the requesting client"""
+
     helpMessage = """[SERVER] Available commands:
     Show active clients: /show
     Send to specific client: /msg <client_name> <message>
