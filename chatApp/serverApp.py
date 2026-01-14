@@ -93,9 +93,7 @@ def process_data(data, clientSocket, senderName):
         direct_message(parts, clientSocket, senderName)
     else:
         clientSocket.sendall("[SERVER] Unknown command. Type /help for a list of commands.".encode("utf-8"))
-
-
-    
+  
 
 def direct_message(parts, clientSocket, senderName):
     """send a direct message to a specific client"""
@@ -150,7 +148,7 @@ def show_help(clientSocket):
     Show these commands: /help
     Exit chat: /exit"""
     clientSocket.sendall(helpMessage.encode("utf-8"))
-        
+
 
 if __name__ == "__main__":
     main()

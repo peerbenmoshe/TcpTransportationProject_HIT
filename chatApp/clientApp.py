@@ -7,6 +7,7 @@ from serverApp import HOST, PORT
 #if running on different machines, enter HOST IP manually (from the serverApp.py output) (will appear in non-loopback interface)
 # HOST = " . . . . "
 # PORT = 12345
+#if encountering issues, try setting HOST to 127.0.0.1 on both client and server
 
 def main():
     start_client()
@@ -33,10 +34,12 @@ def start_client():
         print(f"[CLIENT] Could not connect to the server: {HOST}:{PORT}")
     except Exception as e:
         print(f"[CLIENT] An error occurred: {e}")
-    finally: #ensure socket is closed and listener thread is stopped, when exiting/error
-        clientSocket.close()
-        stopEvent.set()
+    finally: #close gracefully, stop listener thread when server finished sending messages
+        clientSocket.shutdown(socket.SHUT_WR)
+        while not stopEvent.is_set():
+            time.sleep(0.1)
         listenerThread.join()
+        clientSocket.close()
         
 
 
@@ -71,7 +74,7 @@ def listen_for_messages(clientSocket, stopEvent):
                 else: #if it's a message from another client, print it and re-print the input prompt
                     print(f"\n{message}\n[CLIENT] Enter a message: ", end="")
             else:
-                break
+                stopEvent.set() #server has closed the connection
         except ConnectionAbortedError:
             break
         except Exception as e:
