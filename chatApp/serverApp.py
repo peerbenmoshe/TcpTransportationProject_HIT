@@ -47,13 +47,13 @@ def handle_client(clientSocket, addr):
         Send to all clients: /all <message>
         Show these commands: /help
         Exit chat: /exit"""
-        clientSocket.sendall((welcomeMessage+showCommands).encode("utf-8"))
+        helperApp.send_msg(clientSocket, welcomeMessage + showCommands)
         
         while True:
-            data = clientSocket.recv(1024)
+            data = helperApp.recv_msg(clientSocket)
             if not data:
                 break
-            process_data(data.decode("utf-8"), clientSocket, name)
+            process_data(data, clientSocket, name)
 
     except ConnectionResetError:
         print(f"[SERVER] Connection with client: {addr} was reset")
@@ -69,8 +69,8 @@ def ask_client_name(clientSocket):
 
     askName = "What's your name?"
     while True:
-        clientSocket.sendall(askName.encode("utf-8"))
-        name = clientSocket.recv(1024).decode("utf-8")
+        helperApp.send_msg(clientSocket, askName)
+        name = helperApp.recv_msg(clientSocket)
         if name not in connectedClients.keys(): #verify that the name is unique (not in the dict)
             return name
         askName = "Name already taken. Please provide another name: "
@@ -92,42 +92,42 @@ def process_data(data, clientSocket, senderName):
     elif command == "/msg":
         direct_message(parts, clientSocket, senderName)
     else:
-        clientSocket.sendall("[SERVER] Unknown command. Type /help for a list of commands.".encode("utf-8"))
+        helperApp.send_msg(clientSocket, "[SERVER] Unknown command. Type /help for a list of commands.")
   
 
 def direct_message(parts, clientSocket, senderName):
     """send a direct message to a specific client"""
 
     if len(parts) < 2: #no arguments after /msg
-        clientSocket.sendall("[SERVER] Usage: /msg <client_name> <message>".encode("utf-8"))
+        helperApp.send_msg(clientSocket, "[SERVER] Usage: /msg <client_name> <message>")
         return
     
     parts = parts[1].split(' ', 1)
     if len(parts) < 2: #missing message part
-        clientSocket.sendall("[SERVER] Usage: /msg <client_name> <message>".encode("utf-8"))
+        helperApp.send_msg(clientSocket, "[SERVER] Usage: /msg <client_name> <message>")
         return
     
     destinationName = parts[0]
     message = parts[1]
     if destinationName in connectedClients: #check if the destination client exists
         destinationSocket = connectedClients[destinationName]
-        destinationSocket.sendall(f"[DM from {senderName}] {message}".encode("utf-8"))
+        helperApp.send_msg(destinationSocket, f"[DM from {senderName}] {message}")
     else:
-        clientSocket.sendall(f"[SERVER] Client: {destinationName} is not found. Use /show to see active clients.".encode("utf-8"))
+        helperApp.send_msg(clientSocket, f"[SERVER] Client: {destinationName} is not found. Use /show to see active clients.")
 
 
 def broadcast_message(parts, clientSocket, senderName):
     """send a message to all connected clients except the sender"""
 
     if len(parts) < 2: #missing message part
-        clientSocket.sendall("[SERVER] Usage: /all <message>".encode("utf-8"))
+        helperApp.send_msg(clientSocket, "[SERVER] Usage: /all <message>")
         return
     
     message = parts[1]
 
     for destinationSocket in connectedClients.values(): #send to all clients except sender
         if destinationSocket != clientSocket:
-            destinationSocket.sendall(f"[Broadcast from {senderName}] {message}".encode("utf-8"))
+            helperApp.send_msg(destinationSocket, f"[Broadcast from {senderName}] {message}")
 
 
 def show_active_clients(clientSocket):
@@ -135,7 +135,7 @@ def show_active_clients(clientSocket):
 
     activeClients = ", ".join(connectedClients.keys())
     response = f"[SERVER] Active clients: [{activeClients}]"
-    clientSocket.sendall(response.encode("utf-8"))
+    helperApp.send_msg(clientSocket, response)
 
 
 def show_help(clientSocket):
@@ -147,7 +147,7 @@ def show_help(clientSocket):
     Send to all clients: /all <message>
     Show these commands: /help
     Exit chat: /exit"""
-    clientSocket.sendall(helpMessage.encode("utf-8"))
+    helperApp.send_msg(clientSocket, helpMessage)
 
 
 if __name__ == "__main__":
