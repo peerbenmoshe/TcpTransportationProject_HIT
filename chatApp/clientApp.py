@@ -13,7 +13,7 @@ import helperApp
 def main():
     start_client()
 
-def start_client():
+def start_client() -> None:
     """start the client, connect to the server, handle user input and incoming messages"""
 
     clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -44,7 +44,7 @@ def start_client():
         
 
 
-def login(clientSocket):
+def login(clientSocket: socket.socket) -> None:
     """handle the login process:
     - receive prompt from server
     - send unique client name
@@ -63,7 +63,7 @@ def login(clientSocket):
     print(f"[CLIENT] {response}")
 
 
-def listen_for_messages(clientSocket, stopEvent):
+def listen_for_messages(clientSocket: socket.socket, stopEvent: threading.Event) -> None:
     """listen for incoming messages from the server and print them"""
 
     while not stopEvent.is_set():

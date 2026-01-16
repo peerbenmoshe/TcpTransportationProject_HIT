@@ -5,7 +5,7 @@ import socket
 HEADER_LENGTH = 10
 
 #relevant only for Widndows
-def get_host_ip():
+def get_host_ip() -> str:
     """
     Run `ipconfig` and extract the first non-loopback IPv4 address.
     Returns '127.0.0.1' if none found or on error.
@@ -25,7 +25,7 @@ def get_host_ip():
     return "127.0.0.1"
 
 
-def send_msg(sock, message):
+def send_msg(sock: socket.socket, message: str) -> None:
     """
     Prefixes the message with a fixed-length header indicating its size,
     then sends the header + message.
@@ -34,9 +34,9 @@ def send_msg(sock, message):
     # Create a header of length 10, e.g., "5         " or "1024      "
     header = f"{len(message):<{HEADER_LENGTH}}".encode("utf-8")
     sock.sendall(header + message)
-    
 
-def recv_msg(sock):
+
+def recv_msg(sock: socket.socket) -> str:
     """
     Reads the fixed-length header first to determine message size,
     then loops until the full message body is received.

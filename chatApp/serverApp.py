@@ -2,7 +2,7 @@ import socket
 import threading
 import helperApp
 
-#if using Windows
+#try to get the host IP automatically
 HOST = helperApp.get_host_ip()
 #otherwise, find the IP from your machine manually
 #HOST = " . . . . "
@@ -13,7 +13,7 @@ def main():
     connectedClients = {}
     start_server()
 
-def start_server():
+def start_server() -> None:
     """start the server, accept connections from clients, create a thread to handle each client"""
 
     serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -29,7 +29,7 @@ def start_server():
         print(f"[SERVER] Active connections: {len(connectedClients) + 1}")
 
 
-def handle_client(clientSocket, addr):
+def handle_client(clientSocket: socket.socket, addr: tuple) -> None:
     """handle the communication with a connected client:
     - ask for client name (unique)
     - send a welcome message
@@ -64,7 +64,7 @@ def handle_client(clientSocket, addr):
         print(f"[SERVER] Active connections: {len(connectedClients)}")
 
 
-def ask_client_name(clientSocket):
+def ask_client_name(clientSocket: socket.socket) -> str:
     """ask the client for a unique name, return the name when accepted"""
 
     askName = "What's your name?"
@@ -76,7 +76,7 @@ def ask_client_name(clientSocket):
         askName = "Name already taken. Please provide another name: "
 
 
-def process_data(data, clientSocket, senderName):
+def process_data(data: str, clientSocket: socket.socket, senderName: str) -> None:
     """process the received data, act accordingly based on the command"""
 
     parts = data.strip().split(' ', 1)
@@ -95,7 +95,7 @@ def process_data(data, clientSocket, senderName):
         helperApp.send_msg(clientSocket, "[SERVER] Unknown command. Type /help for a list of commands.")
   
 
-def direct_message(parts, clientSocket, senderName):
+def direct_message(parts: list, clientSocket: socket.socket, senderName: str) -> None:
     """send a direct message to a specific client"""
 
     if len(parts) < 2: #no arguments after /msg
@@ -116,7 +116,7 @@ def direct_message(parts, clientSocket, senderName):
         helperApp.send_msg(clientSocket, f"[SERVER] Client: {destinationName} is not found. Use /show to see active clients.")
 
 
-def broadcast_message(parts, clientSocket, senderName):
+def broadcast_message(parts: list, clientSocket: socket.socket, senderName: str) -> None:
     """send a message to all connected clients except the sender"""
 
     if len(parts) < 2: #missing message part
@@ -130,7 +130,7 @@ def broadcast_message(parts, clientSocket, senderName):
             helperApp.send_msg(destinationSocket, f"[Broadcast from {senderName}] {message}")
 
 
-def show_active_clients(clientSocket):
+def show_active_clients(clientSocket: socket.socket) -> None:
     """send the list of active clients to the requesting client"""
 
     activeClients = ", ".join(connectedClients.keys())
@@ -138,7 +138,7 @@ def show_active_clients(clientSocket):
     helperApp.send_msg(clientSocket, response)
 
 
-def show_help(clientSocket):
+def show_help(clientSocket: socket.socket) -> None:
     """send the list of available commands to the requesting client"""
 
     helpMessage = """[SERVER] Available commands:
